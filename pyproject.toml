@@ -3,8 +3,8 @@ name = "mlt-irae-euroscope-2025"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Zhiyi Chen",email = "jessica.zhiyi.chen@gmail.com"},
-    {name = "Alexander Baratsits",email = "alexander.baratsits@cba.media"}
+    {name = "Zhiyi Chen", email = "jessica.zhiyi.chen@gmail.com"},
+    {name = "Alexander Baratsits", email = "alexander.baratsits@cba.media"}
 ]
 readme = "README.md"
 requires-python = ">=3.9,<3.14"
