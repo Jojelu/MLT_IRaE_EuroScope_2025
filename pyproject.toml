@@ -1,0 +1,23 @@
+[project]
+name = "mlt-irae-euroscope-2025"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Zhiyi Chen",email = "jessica.zhiyi.chen@gmail.com"},
+    {name = "Alexander Baratsits",email = "alexander.baratsits@cba.media"}
+]
+readme = "README.md"
+requires-python = ">=3.9,<3.14"
+dependencies = [
+    "chromadb (>=1.0.12,<2.0.0)",
+    "sentence-transformers (>=4.1.0,<5.0.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "langdetect (>=1.0.9,<2.0.0)",
+    "beautifulsoup4 (>=4.13.4,<5.0.0)",
+    "spacy (>=3.8.7,<4.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
