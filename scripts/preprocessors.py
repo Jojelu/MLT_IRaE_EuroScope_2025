@@ -114,9 +114,11 @@ class DataFrameProcessor:
             f.write(f"Rows with both title and content empty: {both_empty}\n")
             f.write(f"Rows with both title and content duplicated: {both_duplicates}\n")
             f.write(f"Rows with both title and content non-English: {both_non_english}\n")
-        
-    def preprocess_df(self, lemmatize_and_remove_stopwords=False, stats_filename=None):
-            # ... (your preprocess_df logic here)
+    
+    def save_en_clean_df(self, clean_df, filename="en_clean_df.csv"):
+        clean_df.to_csv(filename, index=False)
+
+    def preprocess_df(self, lemmatize_and_remove_stopwords=False, stats_filename=None, english_df_filename=None):
         df[self.title_key] = df[self.title_key].str.strip()
         df[self.content_key] = df[self.content_key].str.strip()
         empty_titles = df[self.title_key].isna().sum() + (df[self.title_key] == '').sum()
@@ -168,6 +170,8 @@ class DataFrameProcessor:
         
         english_df.loc[:, self.title_key] = english_df[self.title_key].apply(self.preprocess_text(lemmatize_and_remove_stopwords=lemmatize_and_remove_stopwords))
         english_df.loc[:, self.content_key] = english_df[self.content_key].apply(self.preprocess_text(lemmatize_and_remove_stopwords=lemmatize_and_remove_stopwords))
+        if english_df_filename:
+            self.save_english_df(english_df, english_df_filename)
         return english_df
 
 
