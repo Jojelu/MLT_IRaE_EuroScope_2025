@@ -197,3 +197,7 @@ cython_debug/
 # ignore files
 SQL_index.py
 script_procedural.py
+
+# ignore database and large files
+*.db
+*.json
