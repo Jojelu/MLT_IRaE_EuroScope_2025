@@ -4,6 +4,10 @@ from chromadb import HttpClient
 from sentence_transformers import SentenceTransformer
 import sqlite3
 from sklearn.feature_extraction.text import CountVectorizer
+import pandas as pd
+import spacy
+import re
+nlp = spacy.load("en_core_web_sm")
 
 class SQLiteIndexer:
     def __init__(self, db_file: str = "index_sqlite.db") -> None:
@@ -23,7 +27,7 @@ class SQLiteIndexer:
         print("🧹 Old tables dropped.")
 
     def initialize_tables(self) -> None:
-        self.cur.execute("CREATE TABLE IF NOT EXISTS document (doc_id INTEGER PRIMARY KEY, title TEXT UNIQUE, content TEXT, doc_len INTEGER)")
+        self.cur.execute("CREATE TABLE IF NOT EXISTS document (doc_id INTEGER PRIMARY KEY, title TEXT, content TEXT, doc_len INTEGER, UNIQUE(title, content))")
         self.cur.execute("CREATE TABLE IF NOT EXISTS term (word_id INTEGER PRIMARY KEY, word TEXT UNIQUE)")
         self.cur.execute(
             "CREATE TABLE IF NOT EXISTS posting (word_id INTEGER, doc_id INTEGER, section TEXT, count INTEGER, unique(word_id, doc_id, section))"
@@ -46,14 +50,42 @@ class SQLiteIndexer:
             print(f"Tokenization error: {e}")
             return {}
 
-
-    def index(self, title: str, content: str, ngram_range=(1, 2)) -> None:
+    def preprocess_text(self, text, lemmatize_and_remove_stopwords=False):
+        preprocessed_text = text.lower()
+        # Remove punctuation (but keep numbers and letters)
+        # Only remove characters that are not letters, numbers, or whitespace
+        preprocessed_text = re.sub(r"[^\w\s]", " ", preprocessed_text)
+        # Remove extra whitespace
+        preprocessed_text = re.sub(r"\s+", " ", preprocessed_text).strip()
+        # Process with spaCy
+        doc = nlp(preprocessed_text)
+        # Lemmatize, remove stopwords, keep alphabetic and numeric tokens, remove short tokens
+        
+        if lemmatize_and_remove_stopwords:
+            preprocessed_text = " ".join([token.lemma_ for token in doc if not token.is_stop])
+        else:
+            preprocessed_text = doc.text
+        return preprocessed_text
+        
+    def index(self, title: str, content: str, ngram_range=(1, 2), lemmatize_and_remove_stopwords=False) -> None:
+        # Save originals for the document table
+        original_title = title
+        original_content = content
         doc_len = len(title) + len(content)
-        self.cur.execute("INSERT OR IGNORE INTO document (title, content, doc_len) VALUES (?, ?, ?)",(title, content, doc_len))
-        self.cur.execute("SELECT doc_id FROM document WHERE title = ?", (title,))
-        doc_id = self.cur.fetchone()[0]
 
-        for section, text in [("title", title), ("content", content)]:
+        # Preprocess for indexing only
+        preprocessed_title = self.preprocess_text(title, lemmatize_and_remove_stopwords)
+        preprocessed_content = self.preprocess_text(content, lemmatize_and_remove_stopwords)
+        
+
+        # Insert original text into the document table
+        self.cur.execute("INSERT OR IGNORE INTO document (title, content, doc_len) VALUES (?, ?, ?)",
+        (original_title, original_content, doc_len))
+        self.cur.execute("SELECT doc_id FROM document WHERE title = ?", (original_title,))
+        doc_id = self.cur.fetchone()[0]
+       
+
+        for section, text in [("title", preprocessed_title), ("content", preprocessed_content)]:
             tokens_freq = self.extract_tokens(text, ngram_range=ngram_range)
             for token, freq in tokens_freq.items():
                 self.cur.execute("INSERT OR IGNORE INTO term (word) VALUES (?)", (token,))
@@ -73,10 +105,31 @@ class SQLiteIndexer:
                     )
                 else:
                     self.cur.execute(
-                        "INSERT INTO posting (word_id, doc_id, count) VALUES (?, ?, ?, ?)",
+                        "INSERT INTO posting (word_id, doc_id, section, count) VALUES (?, ?, ?, ?)",
                         (word_id, doc_id, section, freq)
-                        )
+                    )
         self.con.commit()
+    
+    def get_all_documents(self):
+        """Fetch all documents from the document table as a list of dicts."""
+        self.cur.execute("SELECT doc_id, title, content FROM document")
+        rows = self.cur.fetchall()
+        docs = []
+        for row in rows:
+            docs.append({
+                "doc_id": row[0],
+                "title": row[1],
+                "content": row[2]
+            })
+        return docs
+
+    def save_docs_to_csv(self, filename="Data/documents.csv"):
+        self.cur.execute("SELECT doc_id, title, doc_len FROM document")
+        rows = self.cur.fetchall()
+        columns = [desc[0] for desc in self.cur.description]
+        df = pd.DataFrame(rows, columns=columns)
+        df.to_csv(filename, index=False)
+        print(f"Saved {len(df)} documents to {filename}")
 
     def close(self):
         self.cur.close()
@@ -91,6 +144,9 @@ class ChromaClient:
         return self.client.create_collection(name=collection_name)
 
     def add_documents(self, collection, documents):
+         # Ensure each document has an 'id' field as string
+        for doc in documents:
+            doc["id"] = str(doc["doc_id"])
         embeddings = self.model.encode([doc['content'] for doc in documents], show_progress_bar=True)
         collection.add(
             documents=[doc['content'] for doc in documents],

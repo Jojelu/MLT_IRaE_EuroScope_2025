@@ -73,10 +73,38 @@ def load_data_from_url(url,batch_size=100, offset=0, total_count=None):
 
         offset += batch_size
         time.sleep(1)
-        with open("Data/repco_raw_data.json", "w", encoding="utf-8") as f:
+    with open("Data/repco_raw_data.json", "w", encoding="utf-8") as f:
             json.dump(data_list, f, ensure_ascii=False, indent=2)
-        return data_list
+    return data_list
+
+def load_data_from_json(json_path):
+    with open(json_path, "r", encoding="utf-8") as f:
+        data_list = json.load(f)
+    return data_list 
+
+def main(load_from_url=True, json_path="Data/repco_raw_data.json"):
+    url = "https://repco.arbeit.cba.media/graphql"
+    if load_from_url:
+        raw_data = load_data_from_url(url)
+    else:
+        raw_data = load_data_from_json(json_path)
+    en_title_count = 0
+    en_content_count = 0
+    print(len(raw_data)) # articles fetched
+    for item in raw_data:
+        try:
+            _ = item["title"]["en"]["value"]
+            en_title_count += 1
+        except (KeyError, TypeError):
+            pass
+        try:
+            _ = item["content"]["en"]["value"]
+            en_content_count += 1
+        except (KeyError, TypeError):
+            pass
+    print("Articles with English title:", en_title_count)
+    print("Articles with English content:", en_content_count)
 
 if __name__ == "__main__":
-    url = "https://repco.arbeit.cba.media/graphql"
-    load_data_from_url(url)
+    # Change load_from_url to False to load from file instead
+    main(load_from_url=True)

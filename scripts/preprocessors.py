@@ -29,36 +29,37 @@ class PreDataFrameProcessor:
         self.value_key = value_key
         self.language = language
 
-    def check_same_type(self, data_list, key):
+    def check_same_type(self, data_list):
         if not data_list:
             print("It is an empty list.")
             return
-        first_type = type(data_list[0].get(key))
-        if all(isinstance(item.get(key), first_type) for item in data_list):
-            print(f"All items have the same type for '{key}': {first_type.__name__}")
+        first_type = type(data_list[0])
+        if all(isinstance(item, first_type) for item in data_list):
+            print(f"All items have the same type: {first_type.__name__}")
         else:
-            print(f"Items have different types for '{key}'")
+            print("Items have different types.")
 
     def extract_monolingual_content(self):
-        filtered_titles = [
-            item[self.title_key][self.language] for item in self.data_list
-            if item.get(self.title_key) and self.language in item[self.title_key] and item[self.title_key][self.language].strip() != ""
-        ]
-        filtered_content = [
-            item[self.content_key][self.language] for item in self.data_list
-            if item.get(self.content_key) and self.language in item[self.content_key] and item[self.content_key][self.language].strip() != ""
-        ]
-        self.check_same_type(filtered_titles, self.value_key)
-        self.check_same_type(filtered_content, self.value_key)
+        filtered_titles = []
+        filtered_content = []
+        for item in self.data_list:
+            try:
+                title = item[self.title_key][self.language][self.value_key]
+                content = item[self.content_key][self.language][self.value_key]
+                filtered_titles.append(title)
+                filtered_content.append(content)
+            except (KeyError, TypeError):
+                continue  # Skip items missing expected structure
+        self.check_same_type(filtered_titles)
+        self.check_same_type(filtered_content)
         return filtered_titles, filtered_content
 
     def html2str(self, data_list):
         cleaned_contents = []
-        for item in data_list:
-            html_content = item.get(self.value_key, '')
+        for html_content in data_list:
             if html_content is None:
                 html_content = ''
-            soup = BeautifulSoup(html_content, 'html.parser')
+            soup = BeautifulSoup(html_content, 'html.parser')       
             text_content = soup.get_text()
             cleaned_text = html.unescape(text_content).strip()
             cleaned_contents.append(cleaned_text)
@@ -66,7 +67,7 @@ class PreDataFrameProcessor:
 
     def create_dataframe(self, filtered_titles, cleaned_contents):
         cleaned_texts = self.html2str(cleaned_contents)
-        data = [{self.title_key: filtered_titles[i][self.value_key], self.content_key: cleaned_texts[i]} for i in range(len(cleaned_contents))]
+        data = [{self.title_key: filtered_titles[i], self.content_key: cleaned_texts[i]} for i in range(len(cleaned_contents))]
         return pd.DataFrame(data)
 
 class DataFrameProcessor:
@@ -77,22 +78,6 @@ class DataFrameProcessor:
         self.value_key = value_key
         self.language = language
 
-    
-    def preprocess_text(self, text, lemmatize_and_remove_stopwords=False):
-        preprocessed_text = text.lower()
-        # Remove punctuation (but keep numbers and letters)
-        # Only remove characters that are not letters, numbers, or whitespace
-        preprocessed_text = re.sub(r"[^\w\s]", " ", preprocessed_text)
-        # Remove extra whitespace
-        preprocessed_text = re.sub(r"\s+", " ", preprocessed_text).strip()
-        # Process with spaCy
-        doc = nlp(preprocessed_text)
-        # Lemmatize, remove stopwords, keep alphabetic and numeric tokens, remove short tokens
-        
-        if lemmatize_and_remove_stopwords:
-            preprocessed_text = [token.lemma_ for token in doc if not token.is_stop]
-        
-        return preprocessed_text
     
     def is_english(self, text):
         try:
@@ -118,39 +103,38 @@ class DataFrameProcessor:
     def save_en_clean_df(self, clean_df, filename="en_clean_df.csv"):
         clean_df.to_csv(filename, index=False)
 
-    def preprocess_df(self, lemmatize_and_remove_stopwords=False, stats_filename=None, english_df_filename=None):
-        df[self.title_key] = df[self.title_key].str.strip()
-        df[self.content_key] = df[self.content_key].str.strip()
-        empty_titles = df[self.title_key].isna().sum() + (df[self.title_key] == '').sum()
-        empty_content = df[self.content_key].isna().sum() + (df[self.content_key] == '').sum()
-        both_empty = ((df[self.title_key] == '') & (df[self.content_key] == '')).sum()
+    def preprocess_df(self, stats_filename=None, english_df_filename=None):
+        self.df[self.title_key] = self.df[self.title_key].str.strip()
+        self.df[self.content_key] = self.df[self.content_key].str.strip()
+        empty_titles = self.df[self.title_key].isna().sum() + (self.df[self.title_key] == '').sum()
+        empty_content = self.df[self.content_key].isna().sum() + (self.df[self.content_key] == '').sum()
+        both_empty = ((self.df[self.title_key] == '') & (self.df[self.content_key] == '')).sum()
         print(f"Empty titles: {empty_titles}")
         print(f"Empty content: {empty_content}")
         print(f"Rows with both title and content empty: {both_empty}")
 
-        title_duplicates = df.duplicated(subset=[self.title_key]).sum()
-        content_duplicates = df.duplicated(subset=[self.content_key]).sum()
-        both_duplicates = df.duplicated(subset=[self.title_key, self.content_key]).sum()
+        title_duplicates = self.df.duplicated(subset=[self.title_key]).sum()
+        content_duplicates = self.df.duplicated(subset=[self.content_key]).sum()
+        both_duplicates = self.df.duplicated(subset=[self.title_key, self.content_key]).sum()
         print(f"Title duplicates: {title_duplicates}")
         print(f"Content duplicates: {content_duplicates}")
         print(f"Rows with both title and content duplicated: {both_duplicates}")
         
         
-        df = df[(df[self.title_key] != '') & (df[self.content_key] != '')]
-        df.dropna(subset=[self.title_key, self.content_key], inplace=True)
-        df.drop_duplicates(subset=[self.title_key, self.content_key], inplace=True)  # Remove rows with NaN in 'title' or 'content'
+        self.df = self.df[(self.df[self.title_key] != '') & (self.df[self.content_key] != '')]
+        self.df.dropna(subset=[self.title_key, self.content_key], inplace=True)
+        self.df.drop_duplicates(subset=[self.title_key, self.content_key], inplace=True)  # Remove duplicates based on both title and content
         
-        
-        is_title_english = df[self.title_key].apply(self.is_english)
-        is_content_english = df[self.content_key].apply(self.is_english)
+        is_title_english = self.df[self.title_key].apply(self.is_english)
+        is_content_english = self.df[self.content_key].apply(self.is_english)
         non_english_titles = (~is_title_english).sum()
         non_english_content = (~is_content_english).sum()
         both_non_english = ((~is_title_english) & (~is_content_english)).sum()
         print(f"Non-English titles: {non_english_titles}")
         print(f"Non-English content: {non_english_content}")
         print(f"Rows with both title and content non-English: {both_non_english}")
-        df["is_english"] = df[self.title_key].apply(self.is_english) & df[self.content_key].apply(self.is_english)
-        english_df = df[df["is_english"]].drop(columns=["is_english"]) # Filter English articles
+        self.df["is_english"] = self.df[self.title_key].apply(self.is_english) & self.df[self.content_key].apply(self.is_english)
+        english_df = self.df[self.df["is_english"]].drop(columns=["is_english"]) # Filter English articles
 
         if stats_filename:
             self.save_to_file(
@@ -168,10 +152,8 @@ class DataFrameProcessor:
             )
         
         
-        english_df.loc[:, self.title_key] = english_df[self.title_key].apply(self.preprocess_text(lemmatize_and_remove_stopwords=lemmatize_and_remove_stopwords))
-        english_df.loc[:, self.content_key] = english_df[self.content_key].apply(self.preprocess_text(lemmatize_and_remove_stopwords=lemmatize_and_remove_stopwords))
         if english_df_filename:
-            self.save_english_df(english_df, english_df_filename)
+            self.save_en_clean_df(english_df, english_df_filename)
         return english_df
 
 
