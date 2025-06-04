@@ -81,8 +81,8 @@ def main(query="Romania Elections"):
     
     
     # Dense Retrieval #
-    client = HttpClient(host="arbeit.cba.media", port=8099)
-    collection = client.get_collection("documents")
+    client = ChromaClient(host="arbeit.cba.media", port=8099)
+    collection = client.get_collection(name="chromadb-alex")
     dense_retriever = DenseRetriever(chroma_client=client)
     dense_results = dense_retriever.retrieve(query=query, collection=collection, top_k=10)
     for res in dense_results:

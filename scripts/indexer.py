@@ -142,6 +142,9 @@ class ChromaClient:
     
     def create_collection(self, collection_name):
         return self.client.create_collection(name=collection_name)
+    
+    def get_collection(self, collection_name):
+        return self.client.get_collection(name=collection_name)
 
     def add_documents(self, collection, documents):
          # Ensure each document has an 'id' field as string
