@@ -4,7 +4,7 @@ import numpy as np
 from collections import defaultdict
 from pprint import pprint
 from chromadb import HttpClient
-from scripts.indexer import SQLiteIndex
+from indexer import SQLiteIndex
 from sentence_transformers import SentenceTransformer
 
 

@@ -2,6 +2,7 @@ from retriever import SpladeRetriever, DenseRetriever
 from indexer import SQLiteIndex, ChromaClient
 from sklearn.metrics import ndcg_score
 import numpy as np
+from chromadb import HttpClient
 
 
 def merge_and_rerank(sparse_results, dense_results, alpha=0.5, top_k=10):
@@ -77,19 +78,20 @@ def main(query="Romania Elections"):
     print("\nSparse Retrieval Results:")
     for res in sparse_results:
         print(f"Doc ID: {res['doc_id']}, Score: {res['score']:.4f}, Title: {res['title']}")
-    dense_retriever = DenseRetriever(chroma_client=ChromaClient(url="arbeit.cba.media", port=8099, model_name="all-MiniLM-L6-v2"))
-    dense_results = dense_retriever.retrieve(query=query, collection="documents", top_k=10)
-    for id_, metadata, distance in zip(
-        dense_results["ids"][0],
-        dense_results["metadatas"][0],
-        dense_results["distances"][0]
-    ):
-        print(f"doc_num: {id_}")
-        print(f"Title: {metadata.get('title', 'Kein Titel')}")
-        print(f"Distanz: {distance:.3f}")
+    
+    
+    # Dense Retrieval #
+    client = HttpClient(host="arbeit.cba.media", port=8099)
+    collection = client.get_collection("documents")
+    dense_retriever = DenseRetriever(chroma_client=client)
+    dense_results = dense_retriever.retrieve(query=query, collection=collection, top_k=10)
+    for res in dense_results:
+        print(f"doc_num: {res['id']}")
+        print(f"Title: {res['title']}")
+        print(f"Distanz: {res['score']:.3f}")
         print("-" * 80)
-    hybrid_results = merge_and_rerank(sparse_results, dense_results, alpha=0.5, top_k=10)
-    print("\nHybrid Retrieval Results:")
+        hybrid_results = merge_and_rerank(sparse_results, dense_results, alpha=0.5, top_k=10)
+        print("\nHybrid Retrieval Results:")
     for res in hybrid_results:
         print(f"Doc ID: {res['doc_id']}, Hybrid Score: {res['hybrid_score']:.4f}, Title: {res['title']}")
 
