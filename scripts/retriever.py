@@ -47,19 +47,19 @@ class SpladeRetriever:
                 doc_scores[doc_id] += q_weight * count * weight
         # Get top_k doc_ids
         top_docs = sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
-        # Fetch document titles/contents
+        # Fetch document titles
         results = []
         for doc_id, score in top_docs:
-            sqlite_index.cur.execute("SELECT title, content FROM documents WHERE doc_id = ?", (doc_id,))
+            sqlite_index.cur.execute("SELECT title FROM documents WHERE doc_id = ?", (doc_id,))
             row = sqlite_index.cur.fetchone()
             if row:
-                results.append({"doc_id": doc_id, "title": row[0], "content": row[1], "score": score})
+                results.append({"doc_id": doc_id, "title": row[0], "score": score})
         return results
 
 
 class DenseRetriever:
     def __init__(self, chroma_client):
-        self.chroma_client = chroma_client  # Instance of your ChromaClient
+        self.chroma_client = chroma_client  
 
     def retrieve(self, query: str, collection, top_k=10):
         query_embedding = self.chroma_client.encode(query)
@@ -74,7 +74,7 @@ class DenseRetriever:
             docs.append({
                 "doc_id": results["ids"][0][i],
                 "title": results["metadatas"][0][i].get("title", ""),
-                "content": results["documents"][0][i],
+                #"content": results["documents"][0][i],
                 "score": -results["distances"][0][i]  # Negative distance = higher similarity
             })
         return docs
