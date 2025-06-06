@@ -1,23 +1,10 @@
-#import requests
 from transformers import AutoTokenizer, AutoModelForMaskedLM
-import torch
-import numpy as np
 import pandas as pd
-#import time
 from bs4 import BeautifulSoup
-from collections import defaultdict
-from pprint import pprint
-import math
 import html
-from chromadb import HttpClient
-from sentence_transformers import SentenceTransformer
 from langdetect import detect, DetectorFactory
-import sqlite3
 import spacy
-#from spacy.lang.en.stop_words import STOP_WORDS
-from sklearn.feature_extraction.text import CountVectorizer
-from tqdm import tqdm
-import re
+from boilerpy3 import extractors
 DetectorFactory.seed = 0  # For reproducibility
 nlp = spacy.load("en_core_web_sm")
 
@@ -59,9 +46,16 @@ class PreDataFrameProcessor:
         for html_content in data_list:
             if html_content is None:
                 html_content = ''
-            soup = BeautifulSoup(html_content, 'html.parser')       
-            text_content = soup.get_text()
-            cleaned_text = html.unescape(text_content).strip()
+            # Use BoilerPy3 to extract main content
+            try:
+                main_content = extractor.get_content(html_content)
+            except Exception as e:
+                # Fallback: extract raw text if BoilerPy3 fails
+                soup = BeautifulSoup(html_content, 'html.parser')
+                main_content = soup.get_text()
+            #soup = BeautifulSoup(html_content, 'html.parser')       
+            #text_content = soup.get_text()
+            cleaned_text = html.unescape(main_content).strip()
             cleaned_contents.append(cleaned_text)
         return cleaned_contents
 

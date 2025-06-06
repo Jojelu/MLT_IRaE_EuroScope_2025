@@ -1,8 +1,9 @@
 from retriever import SpladeRetriever, DenseRetriever
-from indexer import SQLiteIndex, ChromaClient
+from indexer import SQLiteIndexer, ChromaClient
 from sklearn.metrics import ndcg_score
 import numpy as np
 from chromadb import HttpClient
+from set_device import set_device
 
 
 def merge_and_rerank(sparse_results, dense_results, alpha=0.5, top_k=10):
@@ -10,33 +11,10 @@ def merge_and_rerank(sparse_results, dense_results, alpha=0.5, top_k=10):
     alpha: weight for sparse score (0 = only dense, 1 = only sparse)
     """
 
-    # Correctly format dense results into a list of dictionaries
-    # Each dictionary represents a retrieved document with its id, metadata, and distance
-    formatted_dense_results = []
-    # Check if dense_results is not empty and has the expected structure
-    print("dense_results =", dense_results)
-    if dense_results and "ids" in dense_results and dense_results["ids"] and \
-        "metadatas" in dense_results and dense_results["metadatas"] and \
-        "distances" in dense_results and dense_results["distances"]:
-
-        # Iterate through the retrieved items
-        # Dense results structure: {"ids": [["id1", "id2"]], "metadatas": [[{}, {}]], "distances": [[0.1, 0.2]]}
-        # We iterate through the inner lists
-        for id_list, metadata_list, distance_list in zip(dense_results["ids"], dense_results["metadatas"], dense_results["distances"]):
-            for doc_id, metadata, distance in zip(id_list, metadata_list, distance_list):
-              formatted_dense_results.append({
-                "id": str(doc_id),  # Ensure ID is a string
-                "metadata": metadata,
-                "score": 1 - distance # Use 1 - distance as a score (higher is better)
-              })
-
-    # Print the length of formatted_dense_results here
-    print("Formatted dense results:", len(formatted_dense_results))
-
     # Build dicts for fast lookup # inserted .strip
     sparse_dict = {str(doc["doc_id"]).strip(): doc for doc in sparse_results}
-    # Corrected: Use the formatted_dense_results list to build the dense_dict
-    dense_dict = {str(doc["id"]).strip(): doc for doc in formatted_dense_results}
+
+    dense_dict = {str(doc["doc_id"]).strip(): doc for doc in dense_results}
 
     # Union of all doc IDs
     all_ids = set(sparse_dict.keys()) | set(dense_dict.keys())
@@ -69,10 +47,11 @@ def merge_and_rerank(sparse_results, dense_results, alpha=0.5, top_k=10):
 
 
 def main(query="Romania Elections"):
-    sparse_retriever = SpladeRetriever(model_name="naver/splade-cocondenser-ensembledistil")
+    device = set_device()
+    sparse_retriever = SpladeRetriever(model_name="naver/splade-cocondenser-ensembledistil", device=device)
     sparse_results = sparse_retriever.retrieve(
         query=query,
-        sqlite_index=SQLiteIndex(db_file="index_sqlite.db"),
+        sqlite_index=SQLiteIndexer(db_file="index_sqlite_v4.db"),
         top_k=10
     )
     print("\nSparse Retrieval Results:")
@@ -81,17 +60,16 @@ def main(query="Romania Elections"):
     
     
     # Dense Retrieval #
-    client = ChromaClient(host="arbeit.cba.media", port=8099)
+    client = ChromaClient(url="arbeit.cba.media", port=8099, device=device)
     collection = client.get_collection(name="chromadb-alex")
     dense_retriever = DenseRetriever(chroma_client=client)
     dense_results = dense_retriever.retrieve(query=query, collection=collection, top_k=10)
+    print("\nDense Retrieval Results:")
     for res in dense_results:
-        print(f"doc_num: {res['id']}")
-        print(f"Title: {res['title']}")
-        print(f"Distanz: {res['score']:.3f}")
-        print("-" * 80)
-        hybrid_results = merge_and_rerank(sparse_results, dense_results, alpha=0.5, top_k=10)
-        print("\nHybrid Retrieval Results:")
+        print(f"Doc ID: {res['doc_id']}, Distanz: {res['score']:.4f}, Title: {res['title']}")
+        
+    hybrid_results = merge_and_rerank(sparse_results, dense_results, alpha=0.5, top_k=10)
+    print("\nHybrid Retrieval Results:")
     for res in hybrid_results:
         print(f"Doc ID: {res['doc_id']}, Hybrid Score: {res['hybrid_score']:.4f}, Title: {res['title']}")
 

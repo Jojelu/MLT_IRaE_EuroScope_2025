@@ -1,15 +1,10 @@
 import os
-
 from data_loader import load_data_from_json
 from preprocessors import PreDataFrameProcessor, DataFrameProcessor
 from indexer import SQLiteIndexer, ChromaClient
 from chromadb import HttpClient
-from set_device import get_least_used_gpu
-gpu_id = get_least_used_gpu()
-os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+from set_device import set_device
 
-import torch
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def create_sqlite_db(
@@ -44,7 +39,7 @@ def create_sqlite_db(
     ) 
     print("DataFrameProcessor initialized with DataFrame.")  
     df_cleaned = df_processor.preprocess_df(stats_filename=stats_filename, english_df_filename=english_df_filename)
-    print("After DataFrameProcessor.preprocess_df:")
+    print("After Dataframe cleaning:")
     print(df_cleaned.head(2))
 
     sqlite_indexer = SQLiteIndexer(db_file=sqlite_db_file)
@@ -76,14 +71,15 @@ def convert_sqlite_to_chroma(sqlite_db_file="index_sqlite.db", chroma_url="arbei
     print("Documents imported to Chroma DB.")
 
 if __name__ == "__main__":
-    #create_sqlite_db()
-    #convert_sqlite_to_chroma()  # Uncomment to run conversion after SQL DB creation
-    client = HttpClient(host="arbeit.cba.media", port=8099)
-    collection = client.get_collection(name="chromadb-alex")  
+    set_device()  # Set the device for GPU usage if available
+    create_sqlite_db()
+
+    #client = HttpClient(host="arbeit.cba.media", port=8099)
+    #collection = client.get_collection(name="chromadb-alex")  
 
     # Example: Retrieve documents by query or ID
-    results = collection.get(ids=["123", "456"], include=["documents", "metadatas"])
-    print(results)
+    #results = collection.get(ids=["123", "456"], include=["documents", "metadatas"])
+    #print(results)
 
 
 
