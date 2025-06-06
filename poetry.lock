@@ -224,6 +224,18 @@ files = [
 numpy = {version = ">=1.19.0,<3.0.0", markers = "python_version >= \"3.9\""}
 
 [[package]]
+name = "boilerpy3"
+version = "1.0.7"
+description = "Python port of Boilerpipe, for HTML boilerplate removal and text extraction"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "boilerpy3-1.0.7-py3-none-any.whl", hash = "sha256:fbfba91745606965400204d26852283ddf90235ab30afe9904de20051556a523"},
+    {file = "boilerpy3-1.0.7.tar.gz", hash = "sha256:a9fede212f80a36dbc7d4f93e35d8636911cb6b37085a3230557d16ad0f076c8"},
+]
+
+[[package]]
 name = "build"
 version = "1.2.2.post1"
 description = "A simple, correct Python build frontend"
@@ -4682,4 +4694,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<3.14"
-content-hash = "548c4d4c7b486ae191adae83b5110a4eff743356855ee153b7f3f1a7e6a7c762"
+content-hash = "03812e872f412b4ec64fe908073aef1a22b0cfa1e88c45760297a23a82aaea64"
