@@ -48,7 +48,7 @@ class PreDataFrameProcessor:
                 html_content = ''
             # Use BoilerPy3 to extract main content
             try:
-                main_content = extractor.get_content(html_content)
+                main_content = extractors.get_content(html_content)
             except Exception as e:
                 # Fallback: extract raw text if BoilerPy3 fails
                 soup = BeautifulSoup(html_content, 'html.parser')

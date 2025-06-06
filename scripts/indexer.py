@@ -157,7 +157,7 @@ class SQLiteIndexer:
             })
         return docs
 
-    def save_docs_to_csv(self, filename="Data/documents.csv"):
+    def save_docs_to_csv(self, filename):
         self.cur.execute("SELECT doc_id, title, doc_len FROM documents")
         rows = self.cur.fetchall()
         columns = [desc[0] for desc in self.cur.description]
@@ -229,7 +229,8 @@ def main():
     print("SQLiteIndexer tables created.")
     for _, row in english_df.iterrows():
         sqlite_indexer.index(title=row['title'], content=row['content'], ngram_range=(1, 2), lemmatize_and_remove_stopwords=True)
-    sqlite_indexer.save_docs_to_csv(filename="Data/documents_en.csv")
+    title_list="Data/documents_en.csv"
+    sqlite_indexer.save_docs_to_csv(title_list)
     sqlite_indexer.close()
     print("Documents indexed in SQLiteIndexer.")
     
