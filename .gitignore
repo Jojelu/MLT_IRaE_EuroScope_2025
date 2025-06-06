@@ -199,5 +199,14 @@ SQL_index.py
 script_procedural.py
 indexer.db
 
-# ignore large json files
-*.json
+# ignore json files
+Data/repco_raw_data.json
+Data/results/sparse_results_k20.json
+Data/results/sparse_results_k10.json
+Data/results/sparse_results_k3.json
+Data/results/hybrid_results_normalized_k20.json
+Data/results/hybrid_results_normalized_k10.json
+Data/results/hybrid_results_normalized_k3.json
+Data/results/dense_results_20.json
+Data/results/dense_results_10.json
+Data/results/dense_results_3.json
