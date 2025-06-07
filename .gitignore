@@ -200,7 +200,8 @@ script_procedural.py
 indexer.db
 doc_titles_v1.csv
 stats_en.csv
-
+Scripts/reranker.py
+Scripts/indexing.py
 # ignore json files
 Data/repco_raw_data.json
 Data/results/sparse_results_k20.json
