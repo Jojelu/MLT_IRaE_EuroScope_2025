@@ -3,7 +3,7 @@ import numpy as np
 from collections import defaultdict
 
 class SparseRetriever:
-    def __init__(self, db_path="splade_index.db"):
+    def __init__(self, db_path="Databases/splade_index.db"):
         self.conn = sqlite3.connect(db_path)
         self.cur = self.conn.cursor()
 

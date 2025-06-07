@@ -36,7 +36,7 @@ class SpladeEncoder:
 # SQLite Indexer Class
 # -----------------------------
 class SQLiteIndexer:
-    def __init__(self, db_path="splade_index.db"):
+    def __init__(self, db_path="Databases/splade_index.db"):
         self.conn = sqlite3.connect(db_path)
         self.cur = self.conn.cursor()
         self._setup_tables()
@@ -177,7 +177,7 @@ def create_splade_db(
     print(f"SPLADE index created and saved to {splade_db_file}")
 
 def main():
-    splade_db_file = "splade_index.db"
+    splade_db_file = "Databases/splade_index.db"
     stats_filename = "Data/splade_stats.txt"
     english_df_filename = "Data/english_splade_df.csv"
 

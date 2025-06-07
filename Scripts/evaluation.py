@@ -32,7 +32,7 @@ def main():
 
     for query in queries:
         ndcg_scores[query] = {}
-        # Always use the top 100 results
+        # Use the top 100 results
         sparse = sparse_results[query].get("100", [])
         dense = dense_results[query].get("100", [])
         hybrid_dict = hybrid_results[query].get("100", {})

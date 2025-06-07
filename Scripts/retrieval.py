@@ -80,8 +80,7 @@ def main():
     client = ChromaClient(url="arbeit.cba.media", port=8099, device=device)
     collection = client.get_collection(name="chromadb-alex")
     dense_retriever = DenseRetriever(chroma_client=client)
-    #sqlite_index=SQLiteIndexer(db_file="splade_index.db")
-
+    print("Starting retrieval process...")
     for query in queries:
         all_results_sparse[query] = {}
         all_results_dense[query] = {}
@@ -135,5 +134,5 @@ def test():
         print(f"{i+1}. {doc['title']}")
 
 
-if __name__ == "__main__":   # Set the device for GPU usage if available
+if __name__ == "__main__":  
     test()

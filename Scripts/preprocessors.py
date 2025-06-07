@@ -148,5 +148,3 @@ class DataFrameProcessor:
         if english_df_filename:
             self.save_en_clean_df(english_df, english_df_filename)
         return english_df
-
-
