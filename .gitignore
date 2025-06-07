@@ -213,3 +213,9 @@ Data/results/dense_results_k20.json
 Data/results/dense_results_k10.json
 Data/results/dense_results_k3.json
 Data/evaluation_set_with_titles.json
+scripts/indexer.py
+index_sqlite_v2.db
+index_sqlite_v3.db
+index_sqlite_v4.db
+index_sqlite.db
+
