@@ -1,0 +1,49 @@
+[{"Romania Elections":
+    [
+        {"doc_id": 671,
+        "title": "Romanian elections and record-breaking protests"
+        },
+        {"doc_id": 589,
+        "title": "When Russia meddles in Europe's democracy: the case of …"
+        },
+        {"doc_id": 591,
+        "title": "Călin Georgescu, the dark horse who shadowed Romania’s democracy"
+        }
+    ]},
+    {"Southeastern Europe":
+    [
+        {"doc_id": 549,
+        "title": "Southeast Europe’s pivotal election season is upon us"
+        },
+        {"doc_id": 605,
+        "title": "Southeast Europe is heating up: large protests threaten governments in Serbia, Romania and Turkey…"
+        },
+        {"doc_id": 530,
+        "title": "The Olympic Games’ mark on South-East Europe: olive branch and Pandora’s box"
+        }
+    ]},
+    {"Germany elections":
+    [
+        {"doc_id": 627,
+        "title": "As election day approaches, Germany's far right firewall …"
+        },
+        {"doc_id": 453,
+        "title": "Who is voting for the far-right in Germany?"
+        },
+        {"doc_id": 646,
+        "title": "Wanted but unwelcome: Europe's immigration conundrum"
+        }
+    ]},
+    {"AI media journalism":
+    [
+        {"doc_id": 666,
+        "title": "Is AI worsening the mental health crisis in journalism"
+        },
+        {"doc_id": 457,
+        "title": "Generative AI is a weapon of mass disinformation"
+        },
+        {"doc_id": 537,
+        "title": "A day to reflect on the value of a free and independent press"
+        }
+    ]}
+]

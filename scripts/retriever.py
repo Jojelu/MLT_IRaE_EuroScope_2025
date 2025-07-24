@@ -7,12 +7,13 @@ class SparseRetriever:
         self.conn = sqlite3.connect(db_path)
         self.cur = self.conn.cursor()
 
-    def search(self, query_tokens: dict, top_k=10) -> list:
+    def search(self, query_tokens: dict, top_k=10, title_weight=2.0, content_weight=1.0) -> list:
         doc_scores = defaultdict(float)
         for token, q_weight in query_tokens.items():
-            self.cur.execute("SELECT doc_id, weight FROM inverted_index WHERE token = ?", (token,))
-            for doc_id, d_weight in self.cur.fetchall():
-                doc_scores[doc_id] += q_weight * d_weight
+            self.cur.execute("SELECT doc_id, weight, section FROM inverted_index WHERE token = ?", (token,))
+            for doc_id, d_weight, section in self.cur.fetchall():
+                weight = title_weight if section == "title" else content_weight
+                doc_scores[doc_id] += q_weight * d_weight * weight
 
         ranked = sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)
         return ranked[:top_k]

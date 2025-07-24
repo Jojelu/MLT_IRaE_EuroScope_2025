@@ -6,6 +6,7 @@ from preprocessors import PreDataFrameProcessor, DataFrameProcessor
 from chromadb import HttpClient
 from sentence_transformers import SentenceTransformer
 import torch.nn.functional as F
+import argparse
 
 
 # -----------------------------
@@ -36,19 +37,22 @@ class SpladeEncoder:
 # SQLite Indexer Class
 # -----------------------------
 class SQLiteIndexer:
-    def __init__(self, db_path="Databases/splade_index.db"):
+    def __init__(self, db_path="database/splade_index.db"):
         self.conn = sqlite3.connect(db_path)
         self.cur = self.conn.cursor()
         self._setup_tables()
 
     def _setup_tables(self):
+        # Added the 'section' column to the inverted_index table
         self.cur.execute("""
         CREATE TABLE IF NOT EXISTS inverted_index (
             token TEXT,
             doc_id TEXT,
+            section TEXT,
             weight REAL
         )""")
-        self.cur.execute("CREATE INDEX IF NOT EXISTS idx_token ON inverted_index(token)")
+        # Updated the index to include section for potentially faster lookups by token and section
+        self.cur.execute("CREATE INDEX IF NOT EXISTS idx_token_section ON inverted_index(token, section)")
         self.cur.execute("""
         CREATE TABLE IF NOT EXISTS documents (
             doc_id INTEGER PRIMARY KEY,
@@ -57,18 +61,28 @@ class SQLiteIndexer:
         )""")
         self.conn.commit()
 
-    def add_document(self, doc_id: str, title: str, content: str, token_weights: dict):
-        # Insert token weights
-        for token, weight in token_weights.items():
+    # Modified add_document to accept separate token weights for title and content
+    def add_document(self, doc_id: str, title: str, content: str, title_token_weights: dict, content_token_weights: dict):
+        # Insert token weights for the title
+        for token, weight in title_token_weights.items():
             self.cur.execute("""
-                INSERT INTO inverted_index (token, doc_id, weight) VALUES (?, ?, ?)
-            """, (token, doc_id, float(weight)))
+                INSERT INTO inverted_index (token, doc_id, section, weight) VALUES (?, ?, ?, ?)
+            """, (token, doc_id, "title", float(weight))) # Insert with section 'title'
 
-        # Save original text
+        # Insert token weights for the content
+        for token, weight in content_token_weights.items():
+             self.cur.execute("""
+                INSERT INTO inverted_index (token, doc_id, section, weight) VALUES (?, ?, ?, ?)
+            """, (token, doc_id, "content", float(weight))) # Insert with section 'content'
+
+
+        # Save original text (assuming doc_id is unique and can be primary key)
+        # If doc_id is not guaranteed to be unique, you might need to adjust the table definition
         self.cur.execute("""
             INSERT INTO documents (doc_id, title, content) VALUES (?, ?, ?)
         """, (doc_id, title, content))
         self.conn.commit()
+
 
     def close(self):
         self.conn.close()
@@ -160,26 +174,43 @@ def create_splade_db(
     df_cleaned = df_processor.preprocess_df(stats_filename=stats_filename, english_df_filename=english_df_filename)
     print("After Dataframe cleaning:")
     print(df_cleaned.head(2))
-    df_cleaned["text"] = df_cleaned["title"].fillna('') + df_cleaned["content"].fillna('')
+    #df_cleaned["text"] = df_cleaned["title"].fillna('') + df_cleaned["content"].fillna('')
     encoder = SpladeEncoder()
     indexer = SQLiteIndexer(db_path=splade_db_file)
     
     for idx, row in df_cleaned.iterrows():
         doc_id = idx+1
-        sparse_vec = encoder.encode(row["text"])
+        title_weight = encoder.encode(row["title"])
+        content_weight = encoder.encode(row["content"])
         indexer.add_document(
             doc_id,
             row["title"],
+            title_weight,
             row["content"],
-            sparse_vec
+            content_weight
         )
     indexer.close()
     print(f"SPLADE index created and saved to {splade_db_file}")
 
+
 def main():
-    splade_db_file = "Databases/splade_index.db"
-    stats_filename = "Data/splade_stats.txt"
-    english_df_filename = "Data/english_splade_df.csv"
+    parser = argparse.ArgumentParser(description='Process some files.')
+    parser.add_argument('--database_file', type=str, help='Path to the database file')
+    parser.add_argument('--stats_file', type=str, help='Path to the statistics file')
+    parser.add_argument('--english_df_file', type=str, help='Path to the English DataFrame file')
+
+    args = parser.parse_args()
+
+    splade_db_file = args.database_file
+    stats_filename = args.stats_file
+    english_df_filename = args.english_df_file
+
+    #print(f"Creating database: {database_file}")
+    #print(f"Saving statistics to: {stats_file}")
+    #print(f"Saving English DataFrame to: {english_df_file}")
+    #splade_db_file = "database/splade_index_update.db"
+    #stats_filename = "data/splade_stats_1807.txt"
+    #english_df_filename = "data/english_splade_df_1807.csv"
 
     
     create_splade_db(
@@ -187,7 +218,7 @@ def main():
         stats_filename=stats_filename,
         english_df_filename=english_df_filename,
         load_from_url=False,
-        json_path="Data/repco_raw_data.json",
+        json_path="data/repco_raw_data.json",
         url=None
     )
 if __name__ == "__main__":

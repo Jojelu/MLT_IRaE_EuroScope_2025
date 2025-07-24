@@ -107,4 +107,4 @@ def main(load_from_url=True, json_path="Data/repco_raw_data.json"):
 
 if __name__ == "__main__":
     # Change load_from_url to False to load from file instead
-    main(load_from_url=True)
+    main()

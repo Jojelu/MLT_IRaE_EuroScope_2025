@@ -1,5 +1,5 @@
 import subprocess
-import os#
+import os
 
 def set_device():
     try:

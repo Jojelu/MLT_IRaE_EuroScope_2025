@@ -57,6 +57,17 @@ class PreDataFrameProcessor:
             cleaned_text = html.unescape(main_content).strip()
             cleaned_contents.append(cleaned_text)
         return cleaned_contents
+    
+    def clean_texts(self, texts):
+        cleaned_texts = []
+        for text in texts:
+            if text is None:
+                text = ''
+            # Use BeautifulSoup to clean HTML tags and extract text
+            soup = BeautifulSoup(text, 'html.parser')
+            cleaned_text = soup.get_text().strip()
+            cleaned_texts.append(cleaned_text)
+        return cleaned_texts
 
     def create_dataframe(self, filtered_titles, cleaned_contents):
         cleaned_texts = self.html2str(cleaned_contents)
