@@ -219,4 +219,5 @@ index_sqlite_v2.db
 index_sqlite_v3.db
 index_sqlite_v4.db
 index_sqlite.db
-
+data/raw
+src/preprocess.py
