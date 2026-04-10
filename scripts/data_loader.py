@@ -14,7 +14,7 @@ def load_data_from_url(url,batch_size=100, offset=0, total_count=None):
             revision: {{
                 repoDid: {{
                 in: [
-                    "did:key:z6Mkf93GdfHNc1FZMvzHFFf58iSsLCZx6acZdoEUP5q1oKdB"
+                    "did:key:hidden"
                 ]
                 }}
             }}
@@ -82,9 +82,8 @@ def load_data_from_json(json_path):
         data_list = json.load(f)
     return data_list 
 
-def main(load_from_url=True, json_path="Data/repco_raw_data.json"):
-    url = "https://repco.arbeit.cba.media/graphql"
-    if load_from_url:
+def main(url=None, json_path="Data/repco_raw_data.json"):
+    if url:
         raw_data = load_data_from_url(url)
     else:
         raw_data = load_data_from_json(json_path)
