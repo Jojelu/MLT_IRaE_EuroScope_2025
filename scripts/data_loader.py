@@ -68,7 +68,7 @@ def load_data_from_url(url,batch_size=100, offset=0, total_count=None):
         print(f"Fetched {len(data_list)} / {total_count} records...")
 
         if len(items) < batch_size:
-            print("✅ All records fetched.")
+            print("All records fetched.")
             break
 
         offset += batch_size
